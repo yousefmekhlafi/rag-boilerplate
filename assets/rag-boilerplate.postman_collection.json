@@ -1,0 +1,48 @@
+{
+	"info": {
+		"_postman_id": "efa28f1a-4919-4b5c-bcc6-027781e9091c",
+		"name": "rag-boilerplate",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45904822",
+		"_collection_link": "https://yousef-8716373.postman.co/workspace/yousef's-Workspace~51204fb1-b06e-47e8-8bcb-ee0155353f03/collection/45904822-efa28f1a-4919-4b5c-bcc6-027781e9091c?action=share&source=collection_link&creator=45904822"
+	},
+	"item": [
+		{
+			"name": "welcome",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "api",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		}
+	]
+}
