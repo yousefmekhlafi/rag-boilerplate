@@ -30,3 +30,24 @@ $ conda create -n "YOUR-ENV-NAME" python=3.10
 $ conda activate "YOUR-ENV-NAME"
 ```
 
+## Installation 
+
+### Install required package 
+
+```bash
+$ pip install -r requirements.txt 
+```
+
+### Setup the environment variables 
+
+```bash
+$ cp .env.example .env
+```
+
+Set your environment variables in `.env` file such as your OPENAI/GROQ/HUGGINGFACE api keys and secrets.
+
+### Run the FastAPI server 
+
+```bash
+$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+```
