@@ -1,0 +1,75 @@
+Folder PATH listing
+Volume serial number is 347D-E333
+C:.
+|   LICENSE
+|   project_structure.txt
+|   README.md
+|   
+\---src
+    |   .env
+    |   .env.example
+    |   .gitignore
+    |   main.py
+    |   requirements.txt
+    |   
+    +---assets
+    |   |   .gitignore
+    |   |   .gitkeep
+    |   |   rag-boilerplate.postman_collection.json
+    |   |   
+    |   \---files
+    |       \---1
+    |               ftgdd6llae41_Retrievalaugmentedgeneration.pdf
+    |               testing.txt
+    |               
+    +---controllers
+    |   |   BaseController.py
+    |   |   DataController.py
+    |   |   ProjectController.py
+    |   |   __init__.py
+    |   |   
+    |   \---__pycache__
+    |           BaseController.cpython-310.pyc
+    |           DataController.cpython-310.pyc
+    |           ProjectController.cpython-310.pyc
+    |           __init__.cpython-310.pyc
+    |           
+    +---helpers
+    |   |   config.py
+    |   |   __init__.py
+    |   |   
+    |   \---__pycache__
+    |           config.cpython-310.pyc
+    |           __init__.cpython-310.pyc
+    |           
+    +---models
+    |   |   __init__.py
+    |   |   
+    |   +---enums
+    |   |   |   ResponseEnums.py
+    |   |   |   __init__.py
+    |   |   |   
+    |   |   \---__pycache__
+    |   |           ResponseEnums.cpython-310.pyc
+    |   |           __init__.cpython-310.pyc
+    |   |           
+    |   \---__pycache__
+    |           __init__.cpython-310.pyc
+    |           
+    +---routes
+    |   |   base.py
+    |   |   data.py
+    |   |   __init__.py
+    |   |   
+    |   +---schemas
+    |   |       data.py
+    |   |       __init__.py
+    |   |       
+    |   \---__pycache__
+    |           base.cpython-310.pyc
+    |           data.cpython-310.pyc
+    |           __init__.cpython-310.pyc
+    |           
+    \---__pycache__
+            main.cpython-310.pyc
+            
