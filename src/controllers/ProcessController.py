@@ -1,9 +1,9 @@
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os
-from langchain_community.document_loaders import TextLoader
-from langchain_community.document_loaders import PyMuPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter 
+from llama_index.core import SimpleDirectoryReader, Document
+from llama_index.core.text_splitter import SentenceSplitter
+
 from models import ProcessingEnum
 
 class ProcessController(BaseController):
@@ -25,42 +25,25 @@ class ProcessController(BaseController):
             file_id
         )
 
-        if file_ext == ProcessingEnum.TXT.value:
-            return TextLoader(file_path, encoding="utf-8")
+        if file_ext in [ProcessingEnum.TXT.value, ProcessingEnum.PDF.value]:
+            return SimpleDirectoryReader(input_files=[file_path])
 
-        if file_ext == ProcessingEnum.PDF.value:
-            return PyMuPDFLoader(file_path)
-        
         return None
 
     def get_file_content(self, file_id: str):
 
         loader = self.get_file_loader(file_id=file_id)
-        return loader.load()
+        return loader.load_data() if loader else None
 
     def process_file_content(self, file_content: list, file_id: str,
-                            chunk_size: int=100, overlap_size: int=20):
+                            chunk_size: int=1000, overlap_size: int=200):
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=overlap_size,
-            length_function=len,
-        )
+        text_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=overlap_size)
 
-        file_content_texts = [
-            rec.page_content
-            for rec in file_content
-        ]
-
-        file_content_metadata = [
-            rec.metadata
-            for rec in file_content
-        ]
-
-        chunks = text_splitter.create_documents(
-            file_content_texts,
-            metadatas=file_content_metadata
-        )
+        chunks = []
+        for doc in file_content:
+            split_texts = text_splitter.split_text(doc.get_content())
+            for chunk_text in split_texts:
+                chunks.append(Document(text=chunk_text, metadata=doc.metadata))
 
         return chunks
-
