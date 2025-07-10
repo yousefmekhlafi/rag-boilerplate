@@ -1,10 +1,9 @@
 from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os
-from llama_index.core import SimpleDirectoryReader, Document
-from llama_index.core.text_splitter import SentenceSplitter
-
+from llama_index.core import SimpleDirectoryReader
 from models import ProcessingEnum
+from chunkers.ChunkingProviderFactory import ChunkingProviderFactory
 
 class ProcessController(BaseController):
 
@@ -35,15 +34,7 @@ class ProcessController(BaseController):
         loader = self.get_file_loader(file_id=file_id)
         return loader.load_data() if loader else None
 
-    def process_file_content(self, file_content: list, file_id: str,
-                            chunk_size: int=1000, overlap_size: int=200):
+    def process_file_content(self, file_content: list, file_id: str):
 
-        text_splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=overlap_size)
-
-        chunks = []
-        for doc in file_content:
-            split_texts = text_splitter.split_text(doc.get_content())
-            for chunk_text in split_texts:
-                chunks.append(Document(text=chunk_text, metadata=doc.metadata))
-
-        return chunks
+        chunker = ChunkingProviderFactory.get_chunker()
+        return chunker.chunk_documents(file_content=file_content)
