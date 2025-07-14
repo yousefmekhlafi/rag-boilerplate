@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
+from fastapi import FastAPI, APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
@@ -7,6 +7,8 @@ import aiofiles
 from models import ResponseSignal
 import logging
 from .schemas.data import ProcessRequest
+from models.ProjectModel import ProjectModel
+from models.ChunkModel import ChunkModel
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -16,8 +18,16 @@ data_router = APIRouter(
 )
 
 @data_router.post("/upload/{project_id}")
-async def upload_data(project_id: str, file: UploadFile,
+async def upload_data(request: Request, project_id: str, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
+    
+    project_model = ProjectModel(
+        db_client=request.app.db_client
+    )
+
+    project = await project_model.get_project_or_create_one(
+        project_id=project_id
+    )
         
     
     # validate the file properties
@@ -34,6 +44,7 @@ async def upload_data(project_id: str, file: UploadFile,
         )
 
     project_dir_path = ProjectController().get_project_path(project_id=project_id)
+
     file_path, file_id = data_controller.generate_unique_filepath(
         orig_file_name=file.filename,
         project_id=project_id
@@ -57,34 +68,51 @@ async def upload_data(project_id: str, file: UploadFile,
     return JSONResponse(
             content={
                 "signal": ResponseSignal.FILE_UPLOAD_SUCCEEDED.value,
-                "file_id": file_id
+                "file_id": file_id,
             }
         )
 
 @data_router.post("/process/{project_id}")
 
-async def process_endpoint(project_id: str, process_request: ProcessRequest):
+async def process_endpoint(request: Request, project_id: str, process_request: ProcessRequest):
 
     file_id = process_request.file_id
+    do_reset = process_request.do_reset
+
+    project_model = ProjectModel(
+        db_client=request.app.db_client
+    )
+
+    project = await project_model.get_project_or_create_one(
+        project_id=project_id
+    )
 
     process_controller = ProcessController(project_id=project_id)
 
     file_content = process_controller.get_file_content(file_id=file_id)
 
-    file_chunks = process_controller.process_file_content(
+    no_records = await process_controller.chunk_and_save(
         file_content=file_content,
-        file_id=file_id
+        file_id=file_id,
+        project=project,
+        db_client=request.app.db_client,
+        do_reset=do_reset
     )
 
-    if file_chunks is None or len(file_chunks) == 0:
-        JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={
-            "signal": ResponseSignal.PROCESSING_FAILED.value
-        }
+    if no_records is None:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "signal": ResponseSignal.PROCESSING_FAILED.value
+            }
         )
 
-    return file_chunks
+    return JSONResponse(
+        content={
+            "signal": ResponseSignal.PROCESSING_SUCCESS.value,
+            "inserted_chunks": no_records
+        }
+    )
 
 
 

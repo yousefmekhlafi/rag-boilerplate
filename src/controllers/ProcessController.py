@@ -4,6 +4,8 @@ import os
 from llama_index.core import SimpleDirectoryReader
 from models import ProcessingEnum
 from chunkers.ChunkingProviderFactory import ChunkingProviderFactory
+from models.db_schemas import DataChunk
+from models.ChunkModel import ChunkModel
 
 class ProcessController(BaseController):
 
@@ -38,3 +40,36 @@ class ProcessController(BaseController):
 
         chunker = ChunkingProviderFactory.get_chunker()
         return chunker.chunk_documents(file_content=file_content)
+
+    async def chunk_and_save(self, file_content: list, file_id: str, project: object, db_client: object, do_reset: int):
+
+        chunk_model = ChunkModel(
+            db_client=db_client
+        )
+
+        if do_reset == 1:
+            _ = await chunk_model.delete_chunks_by_project_id(
+                project_id=project.id
+            )
+
+        file_chunks = self.process_file_content(
+            file_content=file_content,
+            file_id=file_id
+        )
+
+        if file_chunks is None or len(file_chunks) == 0:
+            return None
+
+        file_chunks_records = [
+            DataChunk(
+                chunk_text=chunk.text,
+                chunk_metadata=chunk.metadata,
+                chunk_order=i+1,
+                chunk_project_id=project.id
+            )
+            for i, chunk in enumerate(file_chunks)
+        ]
+
+        no_records = await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+
+        return no_records

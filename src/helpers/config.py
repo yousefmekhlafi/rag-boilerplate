@@ -6,15 +6,17 @@ class Settings(BaseSettings):
     APP_NAME: str
     APP_VERSION: str
 
-    CHUNKING_PROVIDER: str
-
     FILE_ALLOWED_TYPES: list
     FILE_MAX_SIZE: int
     FILE_DEFAULT_CHUNK_SIZE: int
 
+    CHUNKING_PROVIDER: str
 
-    class Config:
-        env_file = ".env"
+
+    MONGODB_URL: str
+    MONGODB_DATABASE: str
+
+    model_config = SettingsConfigDict(env_file=".env")
 
 def get_settings():
     return Settings() 
