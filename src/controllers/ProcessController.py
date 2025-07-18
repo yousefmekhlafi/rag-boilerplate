@@ -43,7 +43,7 @@ class ProcessController(BaseController):
 
     async def chunk_and_save(self, file_content: list, file_id: str, project: object, db_client: object, do_reset: int):
 
-        chunk_model = ChunkModel(
+        chunk_model = await ChunkModel.create_instance(
             db_client=db_client
         )
 

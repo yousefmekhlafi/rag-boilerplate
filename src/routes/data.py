@@ -8,7 +8,6 @@ from models import ResponseSignal
 import logging
 from .schemas.data import ProcessRequest
 from models.ProjectModel import ProjectModel
-from models.ChunkModel import ChunkModel
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -21,7 +20,7 @@ data_router = APIRouter(
 async def upload_data(request: Request, project_id: str, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
     
-    project_model = ProjectModel(
+    project_model = await ProjectModel.create_instance(
         db_client=request.app.db_client
     )
 
@@ -79,7 +78,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
     file_id = process_request.file_id
     do_reset = process_request.do_reset
 
-    project_model = ProjectModel(
+    project_model = await ProjectModel.create_instance(
         db_client=request.app.db_client
     )
 
