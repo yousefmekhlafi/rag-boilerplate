@@ -8,6 +8,10 @@ from models import ResponseSignal
 import logging
 from .schemas.data import ProcessRequest
 from models.ProjectModel import ProjectModel
+from models.AssetModel import AssetModel
+from models.db_schemas import Asset
+from models.enums.AssetTypeEnum import AssetTypeEnum
+from bson import ObjectId
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -63,11 +67,25 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
                 "signal": ResponseSignal.FILE_UPLOAD_FAILED.value
             }
         )
+    
+    # store assets into database
+    asset_model = await AssetModel.create_instance(
+        db_client=request.app.db_client
+    )
+
+    asset_resource = Asset(
+        asset_project_id=project.id,
+        asset_type=AssetTypeEnum.FILE.value,
+        asset_name=file_id,
+        asset_size=os.path.getsize(file_path)
+    )
+
+    asset_record = await asset_model.create_asset(asset=asset_resource)
 
     return JSONResponse(
             content={
                 "signal": ResponseSignal.FILE_UPLOAD_SUCCEEDED.value,
-                "file_id": file_id,
+                "file_id": str(asset_record.id),
             }
         )
 
@@ -75,7 +93,6 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
 
 async def process_endpoint(request: Request, project_id: str, process_request: ProcessRequest):
 
-    file_id = process_request.file_id
     do_reset = process_request.do_reset
 
     project_model = await ProjectModel.create_instance(
@@ -86,32 +103,89 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
         project_id=project_id
     )
 
-    process_controller = ProcessController(project_id=project_id)
-
-    file_content = process_controller.get_file_content(file_id=file_id)
-
-    no_records = await process_controller.chunk_and_save(
-        file_content=file_content,
-        file_id=file_id,
-        project=project,
-        db_client=request.app.db_client,
-        do_reset=do_reset
+    asset_model = await AssetModel.create_instance(
+        db_client=request.app.db_client
     )
 
-    if no_records is None:
+    project_files_ids = {}
+    if process_request.file_id:
+        asset_record = await asset_model.get_asset_record(
+            asset_project_id=project.id,
+            asset_name=process_request.file_id
+        )
+
+        if asset_record is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal": ResponseSignal.FILE_ID_ERROR.value,
+                }
+            )
+        
+        project_files_ids = {
+            asset_record.id: asset_record.asset_name
+        }
+    else: 
+        project_files = await asset_model.get_all_project_assets(
+            asset_project_id=project.id,
+            asset_type=AssetTypeEnum.FILE.value,
+        )
+
+        project_files_ids = {
+            record.id: record.asset_name
+            for record in project_files 
+        }
+
+    if len(project_files_ids) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "signal": ResponseSignal.PROCESSING_FAILED.value
+                "signal": ResponseSignal.NO_FILES_ERROR.value,
             }
         )
+
+    process_controller = ProcessController(project_id=project_id)
+    no_records = 0 
+    no_files = 0
+
+    
+    for asset_id, file_id in project_files_ids.items():
+
+        file_content = process_controller.get_file_content(file_id=file_id)
+
+        if file_content is None:
+            logger.error(f"error while processing file: {file_id}")
+            continue
+
+        inserted_chunks = await process_controller.chunk_and_save(
+            file_content=file_content,
+            file_id=file_id,
+            asset_id=asset_id,
+            project=project,
+            db_client=request.app.db_client,
+            do_reset=do_reset
+        )
+
+        if no_records is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    "signal": ResponseSignal.PROCESSING_FAILED.value
+                }
+            )
+        
+        no_records += inserted_chunks
+        no_files += 1
+        do_reset = 0
 
     return JSONResponse(
         content={
             "signal": ResponseSignal.PROCESSING_SUCCESS.value,
-            "inserted_chunks": no_records
+            "inserted_chunks": no_records,
+            "processed_files": no_files
         }
     )
+
 
 
 

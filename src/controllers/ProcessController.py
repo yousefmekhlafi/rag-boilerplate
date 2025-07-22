@@ -28,20 +28,25 @@ class ProcessController(BaseController):
 
         if file_ext in [ProcessingEnum.TXT.value, ProcessingEnum.PDF.value]:
             return SimpleDirectoryReader(input_files=[file_path])
+        
+        if not os.path.exists(file_path):
+            return None
 
         return None
 
     def get_file_content(self, file_id: str):
 
         loader = self.get_file_loader(file_id=file_id)
-        return loader.load_data() if loader else None
+        if loader:
+            return loader.load_data()
+        return None
 
     def process_file_content(self, file_content: list, file_id: str):
 
         chunker = ChunkingProviderFactory.get_chunker()
         return chunker.chunk_documents(file_content=file_content)
 
-    async def chunk_and_save(self, file_content: list, file_id: str, project: object, db_client: object, do_reset: int):
+    async def chunk_and_save(self, file_content: list, file_id: str, asset_id: str, project: object, db_client: object, do_reset: int):
 
         chunk_model = await ChunkModel.create_instance(
             db_client=db_client
@@ -65,7 +70,8 @@ class ProcessController(BaseController):
                 chunk_text=chunk.text,
                 chunk_metadata=chunk.metadata,
                 chunk_order=i+1,
-                chunk_project_id=project.id
+                chunk_project_id=project.id,
+                chunk_asset_id=asset_id
             )
             for i, chunk in enumerate(file_chunks)
         ]
