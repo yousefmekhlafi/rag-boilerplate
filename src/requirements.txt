@@ -8,3 +8,4 @@ llama-index==0.12.47
 llama-index-readers-file==0.4.11
 PyMuPDF==1.22.5
 motor==3.7.1
+pydantic-mongo==2.3.0
