@@ -1,5 +1,5 @@
 from enum import Enum
 
 class EmbeddingEnums(Enum):
-    OPENAI = "OPENAI"
-    COHERE = "COHERE"
+    HUGGINGFACE = "HUGGINGFACE"
+    HUGGINGFACE_LOCAL = "HUGGINGFACE_LOCAL"

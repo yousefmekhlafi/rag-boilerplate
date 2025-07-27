@@ -1,11 +1,10 @@
 from ..GenerationInterface import GenerationInterface
-from openai import OpenAI
+from groq import Groq
 
-class OpenAIGenerationProvider(GenerationInterface):
+class GroqGenerationProvider(GenerationInterface):
 
-    def __init__(self, api_key: str, api_url: str, model_id: str, default_input_max_characters: int, default_generation_max_output_tokens: int, default_generation_temperature: float):
+    def __init__(self, api_key: str, model_id: str, default_input_max_characters: int, default_generation_max_output_tokens: int, default_generation_temperature: float):
         self.api_key = api_key
-        self.api_url = api_url
         self.model_id = model_id
         self.default_input_max_characters = default_input_max_characters
         self.default_generation_max_output_tokens = default_generation_max_output_tokens
@@ -13,10 +12,7 @@ class OpenAIGenerationProvider(GenerationInterface):
         self.client = self.get_client()
 
     def get_client(self):
-        return OpenAI(
-            api_key=self.api_key,
-            base_url=self.api_url
-        )
+        return Groq(api_key=self.api_key)
 
     def set_generation_model(self, model_id: str):
         self.model_id = model_id
@@ -28,14 +24,19 @@ class OpenAIGenerationProvider(GenerationInterface):
         if temperature is None:
             temperature = self.default_generation_temperature
 
-        response = self.client.completions.create(
+        chat_completion = self.client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
             model=self.model_id,
-            prompt=prompt,
+            temperature=temperature,
             max_tokens=max_output_tokens,
-            temperature=temperature
         )
 
-        return response.choices[0].text.strip()
+        return chat_completion.choices[0].message.content
 
     def construct_prompt(self, prompt: str, role: str):
         return {"role": role, "content": prompt}

@@ -1,5 +1,5 @@
 from enum import Enum
 
 class GenerationEnums(Enum):
-    OPENAI = "OPENAI"
-    COHERE = "COHERE"
+    GROQ = "GROQ"
+    OLLAMA = "OLLAMA"

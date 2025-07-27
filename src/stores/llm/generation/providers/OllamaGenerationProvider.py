@@ -1,10 +1,10 @@
 from ..GenerationInterface import GenerationInterface
-import cohere
+from ollama import Client
 
-class CoHereGenerationProvider(GenerationInterface):
+class OllamaGenerationProvider(GenerationInterface):
 
-    def __init__(self, api_key: str, model_id: str, default_input_max_characters: int, default_generation_max_output_tokens: int, default_generation_temperature: float):
-        self.api_key = api_key
+    def __init__(self, api_url: str, model_id: str, default_input_max_characters: int, default_generation_max_output_tokens: int, default_generation_temperature: float):
+        self.api_url = api_url
         self.model_id = model_id
         self.default_input_max_characters = default_input_max_characters
         self.default_generation_max_output_tokens = default_generation_max_output_tokens
@@ -12,7 +12,7 @@ class CoHereGenerationProvider(GenerationInterface):
         self.client = self.get_client()
 
     def get_client(self):
-        return cohere.Client(self.api_key)
+        return Client(host=self.api_url)
 
     def set_generation_model(self, model_id: str):
         self.model_id = model_id
@@ -26,12 +26,19 @@ class CoHereGenerationProvider(GenerationInterface):
 
         response = self.client.chat(
             model=self.model_id,
-            message=prompt,
-            temperature=temperature,
-            max_tokens=max_output_tokens
+            messages=[
+                {
+                    'role': 'user',
+                    'content': prompt,
+                },
+            ],
+            options={
+                'temperature': temperature,
+                'num_predict': max_output_tokens,
+            }
         )
 
-        return response.text
+        return response['message']['content']
 
     def construct_prompt(self, prompt: str, role: str):
         return {"role": role, "content": prompt}
